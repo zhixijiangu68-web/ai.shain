@@ -58,7 +58,7 @@ runs:
         SUMMARY_FILE: ${{ runner.temp }}/ai-shain-summary.md
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       run: |
-        [ -f "$SUMMARY_FILE" ] || echo "AI社員の作業が開始前に失敗しました。" > "$SUMMARY_FILE"
+        [ -f "$SUMMARY_FILE" ] || echo "AI社員の作業が開始前に失敗しました。実行ログを確認してください（ANTHROPIC_API_KEY が未登録の可能性があります）。" > "$SUMMARY_FILE"
         printf '\n---\nCloses #%s\n\n[実行ログ](%s)\n' "$ISSUE_NUMBER" "$RUN_URL" >> "$SUMMARY_FILE"
 
         git add -A

@@ -14,6 +14,10 @@ const env = (name: string, fallback?: string): string => {
   return value;
 };
 
+if (!process.env.ANTHROPIC_API_KEY) {
+  throw new Error("ANTHROPIC_API_KEY が空です。リポジトリの Settings → Secrets and variables → Actions に登録してください");
+}
+
 const targetDir = env("TARGET_DIR", process.env.GITHUB_WORKSPACE);
 const event: IssueEvent = JSON.parse(readFileSync(env("GITHUB_EVENT_PATH"), "utf8"));
 const summaryFile = env("SUMMARY_FILE");
