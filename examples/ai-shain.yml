@@ -1,0 +1,35 @@
+# 使う側のリポジトリに .github/workflows/ai-shain.yml として置く
+name: AI社員
+
+on:
+  issues:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+
+jobs:
+  work:
+    # 「ai-task」ラベルが付いたとき、または Issue に @ai-shain とコメントされたとき。
+    # ラベル付けは書き込み権限者しかできない。コメントは外部の人でも書けるので関係者に限定する。
+    if: >-
+      (github.event_name == 'issues' && github.event.label.name == 'ai-task')
+      || (github.event_name == 'issue_comment' && !github.event.issue.pull_request
+        && contains(github.event.comment.body, '@ai-shain')
+        && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: ai-shain-${{ github.event.issue.number }}
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # エージェントが git の認証情報を使えないようにする
+          persist-credentials: false
+      - uses: zhixijiangu68-web/ai.shain@main
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
