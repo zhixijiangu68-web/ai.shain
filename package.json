@@ -1,10 +1,12 @@
 {
   "name": "ai-shain",
-  "version": "0.1.0",
-  "description": "GitHub Issue を受けてコードを書き PR を出す AI社員",
+  "version": "0.2.0",
+  "description": "GitHub Issue を受けて仕事をし、チェックしてから PR を出す AI社員",
   "scripts": {
     "start": "tsx src/index.ts",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "test": "node --import tsx --test src/*.test.ts",
+    "check": "npm run typecheck && npm test"
   },
   "license": "ISC",
   "dependencies": {

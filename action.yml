@@ -1,5 +1,5 @@
 name: AI社員
-description: GitHub Issue を読んでコードを修正し、Pull Request を作成する
+description: GitHub Issue を読んで仕事をし、チェック担当が確かめてから Pull Request を作成する
 inputs:
   anthropic_api_key:
     description: Anthropic API キー
@@ -11,15 +11,30 @@ inputs:
     description: 使用する Claude のモデル
     default: claude-opus-5-5
   max_turns:
-    description: エージェントの最大ターン数
+    description: 担当（仕事をする側）の最大ターン数
     default: "60"
   max_budget_usd:
-    description: 1 回の作業で使う上限金額 (USD)
+    description: 担当の 1 回の作業で使う上限金額 (USD)
     default: "5"
+  manual:
+    description: 対象リポジトリにある AI社員の業務マニュアルのパス（なければ .github/ai-shain.md → AI_SHAIN.md → docs/ai-shain.md の順に探す）
+    default: .github/ai-shain.md
+  allow_web:
+    description: Web の検索・取得を許可するか（true で、事実や出典の確認に使える）
+    default: "false"
+  review:
+    description: 担当のあとにチェック担当を動かすか（差分を読んで直し、PR 本文を仕上げる）
+    default: "true"
+  review_max_turns:
+    description: チェック担当の最大ターン数
+    default: "40"
+  review_budget_usd:
+    description: チェック担当の上限金額 (USD)
+    default: "3"
 runs:
   using: composite
   steps:
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v7
       with:
         node-version: 22
 
@@ -36,7 +51,7 @@ runs:
         git config user.email "ai-shain@users.noreply.github.com"
         git checkout -b "ai-shain/issue-${ISSUE_NUMBER}-${GITHUB_RUN_ID}"
 
-    - name: AI社員が作業
+    - name: AI社員が作業（担当 → チェック担当）
       shell: bash
       # GitHub トークンはエージェントに渡さない
       env:
@@ -44,6 +59,11 @@ runs:
         MODEL: ${{ inputs.model }}
         MAX_TURNS: ${{ inputs.max_turns }}
         MAX_BUDGET_USD: ${{ inputs.max_budget_usd }}
+        MANUAL: ${{ inputs.manual }}
+        ALLOW_WEB: ${{ inputs.allow_web }}
+        REVIEW: ${{ inputs.review }}
+        REVIEW_MAX_TURNS: ${{ inputs.review_max_turns }}
+        REVIEW_BUDGET_USD: ${{ inputs.review_budget_usd }}
         TARGET_DIR: ${{ github.workspace }}
         SUMMARY_FILE: ${{ runner.temp }}/ai-shain-summary.md
       run: npx --prefix "$GITHUB_ACTION_PATH" tsx "$GITHUB_ACTION_PATH/src/index.ts"
