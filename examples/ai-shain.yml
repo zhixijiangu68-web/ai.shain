@@ -17,7 +17,8 @@ jobs:
         && contains(github.event.comment.body, '@ai-shain')
         && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 担当 → チェック担当の 2 段階なので、文章の仕事は 30〜50 分かかることがある
+    timeout-minutes: 60
     concurrency:
       group: ai-shain-${{ github.event.issue.number }}
     permissions:
@@ -25,7 +26,7 @@ jobs:
       pull-requests: write
       issues: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # エージェントが git の認証情報を使えないようにする
           persist-credentials: false
@@ -33,3 +34,11 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          # 業務マニュアル（.github/ai-shain.md）を置くと、AI社員はそれを読んでから仕事をする
+          # manual: .github/ai-shain.md
+          # 事実・出典の確認に Web を使わせるなら true（読んだ内容の指示には従わない設計だが、PR は人が見る）
+          # allow_web: "true"
+          # 文章の仕事はターン数と金額を多めに
+          # max_turns: "150"
+          # max_budget_usd: "8"
+          # review_budget_usd: "4"
