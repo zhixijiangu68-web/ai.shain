@@ -17,6 +17,9 @@ test("仕事の種類：タイトルの言葉から推測する", () => {
   assert.equal(detectKind(issue("トップの崩れを直す")), "fix");
   assert.equal(detectKind(issue("README の説明を更新")), "docs");
   assert.equal(detectKind(issue("パズルゲームを追加")), "other");
+  assert.equal(detectKind(issue("X の下書き：スピノザの入門記事から（3本）")), "x");
+  assert.equal(detectKind(issue("note：決められない夜に、『もっと調べる』をやめてみた話")), "note");
+  assert.equal(detectKind(issue("記事を点検する", ["ai-task:note"])), "note");
 });
 
 test("業務マニュアル：指定の場所 → よくある置き場の順に探す", () => {

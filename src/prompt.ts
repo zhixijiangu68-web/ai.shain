@@ -17,13 +17,15 @@ export type Issue = {
 };
 export type Comment = { body: string; user: { login: string } };
 export type Manual = { path: string; text: string };
-export type Kind = "article" | "fix" | "check" | "docs" | "other";
+export type Kind = "article" | "fix" | "check" | "docs" | "x" | "note" | "other";
 
 export const KIND_LABEL: Record<Kind, string> = {
   article: "記事・文章を書く／直す",
   fix: "直す（崩れ・リンク切れ・設定・テスト）",
   check: "点検・チェック",
   docs: "文書・決まりを書く",
+  x: "X（SNS）の投稿の下書き",
+  note: "note の記事（リサーチ → 本文 → タイトル → チェック → 告知）",
   other: "その他",
 };
 
@@ -38,10 +40,12 @@ export function labelNames(issue: Issue): string[] {
  */
 export function detectKind(issue: Issue): Kind {
   for (const label of labelNames(issue)) {
-    const m = /^ai-task:(article|fix|check|docs)$/.exec(label);
+    const m = /^ai-task:(article|fix|check|docs|x|note)$/.exec(label);
     if (m) return m[1] as Kind;
   }
   const t = issue.title;
+  if (/^note[：:]|\bnote\b|ノート/i.test(t)) return "note";
+  if (/^X の|\bX\b.*(投稿|下書き|ポスト)|ツイート|tweet/i.test(t)) return "x";
   if (/点検|確認|チェック|レビュー|監査|review|audit/i.test(t)) return "check";
   if (/記事|原稿|文章|コピー|連載|書い|article|post/i.test(t)) return "article";
   if (/README|ドキュメント|文書|決まり|ルール|方針|マニュアル|docs?\b/i.test(t)) return "docs";

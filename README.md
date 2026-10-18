@@ -7,7 +7,7 @@ GitHub の Issue に仕事を書くと、AI社員が対象リポジトリを読�
 
 - Issue に **`ai-task`** ラベルを付ける
 - または Issue に **`@ai-shain`** を含むコメントを書く（追加の指示もそのまま伝わります）
-- 仕事の種類をはっきりさせたいときは、`ai-task:article`（記事・文章）／`ai-task:fix`（直す）／`ai-task:check`（点検）／`ai-task:docs`（文書）のラベルも付ける。付けなければタイトルから推測します
+- 仕事の種類をはっきりさせたいときは、`ai-task:article`（記事・文章）／`ai-task:fix`（直す）／`ai-task:check`（点検）／`ai-task:docs`（文書）／`ai-task:x`（X の投稿の下書き）／`ai-task:note`（note の記事）のラベルも付ける。付けなければタイトルから推測します。種類ごとの進め方は業務マニュアルに書きます
 
 AI社員は作業後、下書き (draft) の PR を作って Issue にリンクを書き込みます。
 変更しなかった場合は、理由と確認したい点を Issue にコメントします。
