@@ -31,6 +31,18 @@ inputs:
   review_budget_usd:
     description: チェック担当の上限金額 (USD)
     default: "3"
+  job_title:
+    description: Issue のないイベント（schedule・workflow_dispatch）で使う、仕事の題
+    default: ""
+  job_body:
+    description: 同じく、仕事の本文（Issue の本文に相当）
+    default: ""
+  job_labels:
+    description: 同じく、仕事の種類のラベル（例 ai-task:x）
+    default: ""
+  report_issue:
+    description: 定期の仕事の結果（PR のリンクか、変更なしの報告）をコメントする Issue の番号
+    default: ""
 runs:
   using: composite
   steps:
@@ -49,7 +61,7 @@ runs:
       run: |
         git config user.name "ai-shain[bot]"
         git config user.email "ai-shain@users.noreply.github.com"
-        git checkout -b "ai-shain/issue-${ISSUE_NUMBER}-${GITHUB_RUN_ID}"
+        git checkout -b "ai-shain/${ISSUE_NUMBER:+issue-$ISSUE_NUMBER-}${ISSUE_NUMBER:-job-}${GITHUB_RUN_ID}"
 
     - name: AI社員が作業（担当 → チェック担当）
       shell: bash
@@ -64,6 +76,9 @@ runs:
         REVIEW: ${{ inputs.review }}
         REVIEW_MAX_TURNS: ${{ inputs.review_max_turns }}
         REVIEW_BUDGET_USD: ${{ inputs.review_budget_usd }}
+        JOB_TITLE: ${{ inputs.job_title }}
+        JOB_BODY: ${{ inputs.job_body }}
+        JOB_LABELS: ${{ inputs.job_labels }}
         TARGET_DIR: ${{ github.workspace }}
         SUMMARY_FILE: ${{ runner.temp }}/ai-shain-summary.md
       run: npx --prefix "$GITHUB_ACTION_PATH" tsx "$GITHUB_ACTION_PATH/src/index.ts"
@@ -74,21 +89,24 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.github_token }}
         ISSUE_NUMBER: ${{ github.event.issue.number }}
-        ISSUE_TITLE: ${{ github.event.issue.title }}
+        ISSUE_TITLE: ${{ github.event.issue.title || inputs.job_title }}
+        REPORT_ISSUE: ${{ inputs.report_issue }}
         SUMMARY_FILE: ${{ runner.temp }}/ai-shain-summary.md
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       run: |
         [ -f "$SUMMARY_FILE" ] || echo "AI社員の作業が開始前に失敗しました。実行ログを確認してください（ANTHROPIC_API_KEY が未登録の可能性があります）。" > "$SUMMARY_FILE"
-        printf '\n---\nCloses #%s\n\n[実行ログ](%s)\n' "$ISSUE_NUMBER" "$RUN_URL" >> "$SUMMARY_FILE"
+        # Issue から起動したときは Closes #N。定期の仕事では、報告先の Issue（report_issue）にコメントする
+        comment_to="${ISSUE_NUMBER:-$REPORT_ISSUE}"
+        if [ -n "$ISSUE_NUMBER" ]; then printf '\n---\nCloses #%s\n\n[実行ログ](%s)\n' "$ISSUE_NUMBER" "$RUN_URL" >> "$SUMMARY_FILE"; else printf '\n---\n[実行ログ](%s)\n' "$RUN_URL" >> "$SUMMARY_FILE"; fi
 
         git add -A
         if git diff --cached --quiet; then
-          gh issue comment "$ISSUE_NUMBER" --body-file "$SUMMARY_FILE"
+          [ -n "$comment_to" ] && gh issue comment "$comment_to" --body-file "$SUMMARY_FILE"
           exit 0
         fi
 
-        git commit -q -m "AI社員: ${ISSUE_TITLE} (#${ISSUE_NUMBER})"
+        git commit -q -m "AI社員: ${ISSUE_TITLE}${ISSUE_NUMBER:+ (#$ISSUE_NUMBER)}"
         branch="$(git branch --show-current)"
         git push -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:${branch}"
         pr_url="$(gh pr create --draft --head "$branch" --title "AI社員: ${ISSUE_TITLE}" --body-file "$SUMMARY_FILE")"
-        gh issue comment "$ISSUE_NUMBER" --body "PR を作成しました: ${pr_url}"
+        [ -n "$comment_to" ] && gh issue comment "$comment_to" --body "PR を作成しました: ${pr_url}"

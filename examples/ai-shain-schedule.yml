@@ -1,0 +1,53 @@
+# 定期の仕事（Issue なしで AI社員を動かす）。使う側のリポジトリに .github/workflows/ai-shain-schedule.yml として置く。
+# リポジトリの変数 AI_SHAIN_SCHEDULE を on にしたときだけ動く（Settings → Secrets and variables → Actions → Variables）。
+name: AI社員（定期）
+
+on:
+  schedule:
+    - cron: "27 20 * * *"    # 毎日 05:27 JST：X の今日の3本（報告だけ。変更なし）
+    - cron: "11 19 * * 1"    # 毎週火曜 04:11 JST：note を1本
+  workflow_dispatch:
+    inputs:
+      job:
+        description: どの仕事か（x / note）
+        default: x
+
+jobs:
+  work:
+    if: ${{ vars.AI_SHAIN_SCHEDULE == 'on' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - id: pick
+        shell: bash
+        env:
+          JOB: ${{ github.event.inputs.job || (github.event.schedule == '11 19 * * 1' && 'note') || 'x' }}
+        run: |
+          echo "job=$JOB" >> "$GITHUB_OUTPUT"
+          if [ "$JOB" = "note" ]; then
+            echo "title=note：今週の1本（テーマは note の運用の Issue の希望か、まだ無い悩み・姿勢から）" >> "$GITHUB_OUTPUT"
+            echo "labels=ai-task,ai-task:note" >> "$GITHUB_OUTPUT"
+          else
+            echo "title=X の下書き：今日の3本（順番表の今日の行を、そのままコピーできる形で。変更はしない）" >> "$GITHUB_OUTPUT"
+            echo "labels=ai-task,ai-task:x" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: zhixijiangu68-web/ai.shain@main
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          manual: .github/ai-shain.md
+          allow_web: "true"
+          job_title: ${{ steps.pick.outputs.title }}
+          job_labels: ${{ steps.pick.outputs.labels }}
+          job_body: 段取りは .github/ai-shain.md の E（X）か F（note）。報告は PR 本文に。
+          report_issue: ${{ steps.pick.outputs.job == 'note' && '231' || '230' }}
+          max_turns: "150"
+          max_budget_usd: "8"
+          review_budget_usd: "4"

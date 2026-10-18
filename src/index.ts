@@ -36,12 +36,16 @@ const review = flag("REVIEW", true);
 const reviewMaxTurns = Number(env("REVIEW_MAX_TURNS", "40"));
 const reviewBudgetUsd = Number(env("REVIEW_BUDGET_USD", "3"));
 
-if (!event.issue) throw new Error("issues / issue_comment イベントから起動してください");
+// Issue のないイベント（schedule・workflow_dispatch）では、JOB_TITLE / JOB_BODY を仕事として受ける
+if (!event.issue && process.env.JOB_TITLE) {
+  event.issue = { number: 0, title: process.env.JOB_TITLE, body: process.env.JOB_BODY ?? null, labels: (process.env.JOB_LABELS ?? "").split(",").filter(Boolean).map(name => ({ name })) };
+}
+if (!event.issue) throw new Error("issues / issue_comment イベントから起動するか、JOB_TITLE（と JOB_BODY）を渡してください");
 const { issue, comment } = event;
 const kind = detectKind(issue);
 const manual = findManual(targetDir, process.env.MANUAL);
 
-console.log(`Issue #${issue.number}: ${issue.title}`);
+console.log(issue.number ? `Issue #${issue.number}: ${issue.title}` : `定期の仕事: ${issue.title}`);
 console.log(`仕事の種類: ${kind} ／ 業務マニュアル: ${manual ? manual.path : "なし"} ／ Web: ${allowWeb ? "可" : "不可"} ／ チェック: ${review ? "あり" : "なし"}`);
 
 // CI 上で人の承認なしに動かすため、使えるツールを明示的に許可する。

@@ -63,7 +63,7 @@ export function findManual(targetDir: string, preferred?: string): Manual | null
   return null;
 }
 
-const issueSection = (issue: Issue, comment?: Comment): string => `## Issue #${issue.number}: ${issue.title}
+const issueSection = (issue: Issue, comment?: Comment): string => `## ${issue.number ? `Issue #${issue.number}` : "定期の仕事"}: ${issue.title}
 ${issue.body?.trim() || "(本文なし)"}
 ${comment ? `\n## 追加の指示（@${comment.user.login} のコメント）\n${comment.body.trim()}\n` : ""}`;
 

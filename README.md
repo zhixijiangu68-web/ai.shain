@@ -33,6 +33,10 @@ PR 本文の末尾に、各担当のターン数と費用が一行で付きま�
 
 ひな形は [`examples/ai-shain-manual.md`](examples/ai-shain-manual.md)。
 
+## 定期の仕事（Issue なし）
+
+`job_title`（と `job_body`・`job_labels`）を渡すと、Issue のないイベント（`schedule`・`workflow_dispatch`）でも動きます。結果の PR のリンクは `report_issue` の Issue にコメントされます。ひな形は [`examples/ai-shain-schedule.yml`](examples/ai-shain-schedule.yml)（リポジトリの変数 `AI_SHAIN_SCHEDULE=on` のときだけ動く）。
+
 ## 使う側のリポジトリでの設定
 
 1. [`examples/ai-shain.yml`](examples/ai-shain.yml) を `.github/workflows/ai-shain.yml` にコピー
